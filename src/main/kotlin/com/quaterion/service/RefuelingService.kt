@@ -8,12 +8,31 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 
+/**
+ * Service for managing refueling operations and fuel analytics.
+ *
+ * Handles business logic for CRUD operations on refueling records
+ * and provides analytical functions for fuel statistics and consumption tracking.
+ *
+ * @property refuelingRepository repository for refueling data access
+ * @property vehicleRepository repository for vehicle data access
+ */
 @Service
 class RefuelingService(
     private val refuelingRepository: RefuelingRepository,
     private val vehicleRepository: VehicleRepository
 ) {
 
+    /**
+     * Creates a new refueling record for a vehicle.
+     *
+     * Automatically calculates total cost based on fuel amount and price per liter.
+     *
+     * @param request refueling creation data
+     * @param userId ID of the user creating the record
+     * @return [RefuelingResponse] representing the created refueling record
+     * @throws IllegalArgumentException if vehicle not found or user lacks access
+     */
     @Transactional
     fun createRefueling(request: CreateRefuelingRequest, userId: Long): RefuelingResponse {
         val vehicle = vehicleRepository.findByIdAndUserId(request.vehicleId, userId)
@@ -36,6 +55,14 @@ class RefuelingService(
         return toRefuelingResponse(savedRefueling, userId)
     }
 
+    /**
+     * Retrieves all refueling records for a specific vehicle.
+     *
+     * @param vehicleId ID of the vehicle to get refuelings for
+     * @param userId ID of the user requesting the records
+     * @return list of [RefuelingResponse] ordered by date descending
+     * @throws IllegalArgumentException if vehicle not found or user lacks access
+     */
     @Transactional(readOnly = true)
     fun getAllRefuelings(vehicleId: Long, userId: Long): List<RefuelingResponse> {
         vehicleRepository.findByIdAndUserId(vehicleId, userId)
@@ -45,6 +72,14 @@ class RefuelingService(
             .map { toRefuelingResponse(it, userId) }
     }
 
+    /**
+     * Retrieves a specific refueling record by ID.
+     *
+     * @param refuelingId ID of the refueling record to retrieve
+     * @param userId ID of the user requesting the record
+     * @return [RefuelingResponse] for the requested record
+     * @throws IllegalArgumentException if refueling not found or user lacks access
+     */
     @Transactional(readOnly = true)
     fun getRefuelingById(refuelingId: Long, userId: Long): RefuelingResponse {
         val refueling = refuelingRepository.findByIdAndUserId(refuelingId, userId)
@@ -52,6 +87,18 @@ class RefuelingService(
         return toRefuelingResponse(refueling, userId)
     }
 
+    /**
+     * Updates an existing refueling record with partial update support.
+     *
+     * Only non-null fields in the request will be updated.
+     * Total cost is automatically recalculated if fuel amount or price changes.
+     *
+     * @param refuelingId ID of the refueling record to update
+     * @param request update data with optional fields
+     * @param userId ID of the user requesting the update
+     * @return [RefuelingResponse] for the updated record
+     * @throws IllegalArgumentException if refueling not found or user lacks access
+     */
     @Transactional
     fun updateRefueling(refuelingId: Long, request: UpdateRefuelingRequest, userId: Long): RefuelingResponse {
         val existingRefueling = refuelingRepository.findByIdAndUserId(refuelingId, userId)
@@ -76,6 +123,13 @@ class RefuelingService(
         return toRefuelingResponse(savedRefueling, userId)
     }
 
+    /**
+     * Deletes a refueling record with ownership verification.
+     *
+     * @param refuelingId ID of the refueling record to delete
+     * @param userId ID of the user requesting deletion
+     * @throws IllegalArgumentException if refueling not found or user lacks access
+     */
     @Transactional
     fun deleteRefueling(refuelingId: Long, userId: Long) {
         val refueling = refuelingRepository.findByIdAndUserId(refuelingId, userId)
@@ -83,6 +137,19 @@ class RefuelingService(
         refuelingRepository.delete(refueling)
     }
 
+    /**
+     * Calculates comprehensive fuel statistics for a vehicle.
+     *
+     * Computes total refuelings, total fuel amount, total cost, average consumption (L/100km),
+     * average price per liter, and total distance traveled. Optionally filters by date range.
+     *
+     * @param vehicleId ID of the vehicle to get statistics for
+     * @param startDate optional start date filter
+     * @param endDate optional end date filter
+     * @param userId ID of the user requesting statistics
+     * @return [FuelStatisticsResponse] containing calculated statistics
+     * @throws IllegalArgumentException if vehicle not found or user lacks access
+     */
     @Transactional(readOnly = true)
     fun getStatistics(vehicleId: Long, startDate: LocalDateTime?, endDate: LocalDateTime?, userId: Long): FuelStatisticsResponse {
         vehicleRepository.findByIdAndUserId(vehicleId, userId)
@@ -134,6 +201,19 @@ class RefuelingService(
         )
     }
 
+    /**
+     * Generates fuel consumption graph data for a vehicle.
+     *
+     * Calculates consumption in L/100km between consecutive full-tank refuelings.
+     * Consumption can only be calculated when the current refueling was a full tank fill.
+     *
+     * @param vehicleId ID of the vehicle to get consumption data for
+     * @param startDate optional start date filter
+     * @param endDate optional end date filter
+     * @param userId ID of the user requesting the data
+     * @return [ConsumptionGraphResponse] containing data points and average consumption
+     * @throws IllegalArgumentException if vehicle not found or user lacks access
+     */
     @Transactional(readOnly = true)
     fun getConsumptionGraph(vehicleId: Long, startDate: LocalDateTime?, endDate: LocalDateTime?, userId: Long): ConsumptionGraphResponse {
         vehicleRepository.findByIdAndUserId(vehicleId, userId)
@@ -179,6 +259,19 @@ class RefuelingService(
         )
     }
 
+    /**
+     * Generates cost analysis graph data for a vehicle.
+     *
+     * Returns data points with total cost and price per liter for each refueling,
+     * along with overall totals and weighted average price per liter.
+     *
+     * @param vehicleId ID of the vehicle to get cost data for
+     * @param startDate optional start date filter
+     * @param endDate optional end date filter
+     * @param userId ID of the user requesting the data
+     * @return [CostGraphResponse] containing data points and aggregated cost data
+     * @throws IllegalArgumentException if vehicle not found or user lacks access
+     */
     @Transactional(readOnly = true)
     fun getCostGraph(vehicleId: Long, startDate: LocalDateTime?, endDate: LocalDateTime?, userId: Long): CostGraphResponse {
         vehicleRepository.findByIdAndUserId(vehicleId, userId)
@@ -210,6 +303,16 @@ class RefuelingService(
         )
     }
 
+    /**
+     * Converts a Refueling entity to RefuelingResponse DTO.
+     *
+     * Calculates fuel consumption and distance since last refueling based on
+     * the vehicle's refueling history.
+     *
+     * @param refueling entity to convert
+     * @param userId ID of the user for authorization check
+     * @return [RefuelingResponse] DTO representation with calculated consumption data
+     */
     private fun toRefuelingResponse(refueling: Refueling, userId: Long): RefuelingResponse {
         val allRefuelings = refuelingRepository.findByVehicleIdAndUserId(refueling.vehicle.id!!, userId)
             .sortedBy { it.odometer }

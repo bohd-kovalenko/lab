@@ -16,7 +16,11 @@ class JwtUtilTest {
     @BeforeEach
     fun setUp() {
         jwtUtil = JwtUtil()
-        ReflectionTestUtils.setField(jwtUtil, "secret", "yourSecretKeyMustBeAtLeast256BitsLongForHS256AlgorithmToWorkProperly")
+        ReflectionTestUtils.setField(
+            jwtUtil,
+            "secret",
+            "yourSecretKeyMustBeAtLeast256BitsLongForHS256AlgorithmToWorkProperly"
+        )
         ReflectionTestUtils.setField(jwtUtil, "expiration", 86400000L) // 24 hours
     }
 
@@ -78,7 +82,11 @@ class JwtUtilTest {
     @Test
     fun `should invalidate expired token`() {
         val expiredJwtUtil = JwtUtil()
-        ReflectionTestUtils.setField(expiredJwtUtil, "secret", "yourSecretKeyMustBeAtLeast256BitsLongForHS256AlgorithmToWorkProperly")
+        ReflectionTestUtils.setField(
+            expiredJwtUtil,
+            "secret",
+            "yourSecretKeyMustBeAtLeast256BitsLongForHS256AlgorithmToWorkProperly"
+        )
         ReflectionTestUtils.setField(expiredJwtUtil, "expiration", -1000L) // Expired immediately
 
         val username = "testuser"

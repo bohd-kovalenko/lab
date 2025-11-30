@@ -4,6 +4,7 @@ plugins {
     kotlin("plugin.jpa") version "2.2.20"
     id("org.springframework.boot") version "3.2.0"
     id("io.spring.dependency-management") version "1.1.4"
+    id("org.jetbrains.dokka") version "2.0.0"
 }
 
 group = "com.quaterion"
@@ -31,7 +32,7 @@ dependencies {
     // Kotlin Support
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
-
+    
     // Test Dependencies
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")

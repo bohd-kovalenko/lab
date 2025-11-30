@@ -193,7 +193,8 @@ class RefuelingRepositoryTest {
             )
         )
 
-        val refuelings = refuelingRepository.findByVehicleIdAndUserId(testVehicle.id!!, testUser.id!!)
+        val refuelings =
+            refuelingRepository.findByVehicleIdAndUserId(testVehicle.id!!, testUser.id!!)
 
         assertEquals(1, refuelings.size)
         assertEquals(refueling1.id, refuelings[0].id)
@@ -213,7 +214,8 @@ class RefuelingRepositoryTest {
             )
         )
 
-        val refuelings = refuelingRepository.findByVehicleIdAndUserId(testVehicle.id!!, anotherUser.id!!)
+        val refuelings =
+            refuelingRepository.findByVehicleIdAndUserId(testVehicle.id!!, anotherUser.id!!)
 
         assertTrue(refuelings.isEmpty())
     }
